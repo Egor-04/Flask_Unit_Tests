@@ -73,13 +73,58 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_container)
 
     def get_all_employees(self):
-        pass
+        try:
+            with main.app.app_context():
+                response_tuple = main.get_employees_list()
+                response = response_tuple[0]
+                employees_list = response.get_json()  # Получаем список сотрудников
+
+                # Очищаем таблицу перед добавлением новых данных
+                self.table.setRowCount(0)
+
+                # Добавляем всех сотрудников из списка
+                for row, employee_data in enumerate(employees_list):
+                    self.table.insertRow(row)
+                    self.table.setItem(row, 0, QTableWidgetItem(employee_data['name']))
+                    self.table.setItem(row, 1, QTableWidgetItem(employee_data['position']))
+                print('Список успешно обновлен!')
+        except Exception as ex:
+            print(f"Error: {ex}")
+
 
     def get_employee_by_id(self):
         try:
-            main.get_employee(int(self.input_field_id.text()))
+            with main.app.app_context():
+                employee_id = int(self.input_field_id.text())
+                response_tuple = main.get_employee(employee_id)
+                response = response_tuple[0]
+                data = response.get_json()
+
+                # Проверяем, существует ли уже такой сотрудник в таблице
+                employee_exists = False
+                for row in range(self.table.rowCount()):
+                    # Если нет, можно сравнивать по имени и должности
+                    if (self.table.item(row, 0).text() == data['name'] and
+                            self.table.item(row, 1).text() == data['position']):
+                        employee_exists = True
+                        break
+
+                if not employee_exists:
+                    # Добавляем новую строку
+                    current_row = self.table.rowCount()
+                    self.table.insertRow(current_row)
+
+                    # Заполняем данные
+                    self.table.setItem(current_row, 0, QTableWidgetItem(data['name']))
+                    self.table.setItem(current_row, 1, QTableWidgetItem(data['position']))
+
+                    # Можно добавить ID в скрытую колонку, если нужно
+                    # self.table.setItem(current_row, 2, QTableWidgetItem(str(employee_id)))
+                else:
+                    print(f"Сотрудник {data['name']} уже есть в таблице")
+
         except Exception as ex:
-            print(ex)
+            print(f"Error: {ex}")
 
 
     def update_employee(self):

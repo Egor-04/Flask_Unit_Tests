@@ -1,6 +1,8 @@
 import psycopg2
+import requests
 from flask import Flask, jsonify, request
 from psycopg2.extras import RealDictCursor
+from werkzeug.utils import redirect
 
 app = Flask(__name__)
 
@@ -87,6 +89,8 @@ def delete_employee(employee_id):
 
     return jsonify({'message': 'Employee deleted successfully'}), 200
 
+def web_request():
+    return requests.get("http://127.0.0.1:5000/employees")
 
 if __name__ == '__main__':
     app.run(debug=True)
