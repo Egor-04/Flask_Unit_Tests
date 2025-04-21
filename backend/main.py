@@ -3,8 +3,10 @@ import requests
 from flask import Flask, jsonify, request
 from psycopg2.extras import RealDictCursor
 from werkzeug.utils import redirect
+from flasgger import Swagger
 
 app = Flask(__name__)
+swagger = Swagger(app)
 
 
 def connect_to_db():
@@ -15,6 +17,42 @@ def connect_to_db():
 
 @app.route('/employees', methods=['POST'])
 def add_employee():
+    """
+    Add a new employee to the database
+    ---
+    tags:
+      - Employees
+    parameters:
+      - in: body
+        name: body
+        schema:
+          id: Employee
+          required:
+            - name
+            - position
+          properties:
+            name:
+              type: string
+              description: Name of the employee
+            position:
+              type: string
+              description: Job position of the employee
+    responses:
+      201:
+        description: Employee created successfully
+        schema:
+          id: EmployeeResponse
+          properties:
+            id:
+              type: integer
+              description: The ID of the created employee
+            name:
+              type: string
+            position:
+              type: string
+      400:
+        description: Invalid input
+    """
     data = request.get_json()
     name = data.get('name')
     position = data.get('position')
@@ -32,6 +70,19 @@ def add_employee():
 
 @app.route('/employees', methods=['GET'])
 def get_employees_list():
+    """
+    Get list of all employees
+    ---
+    tags:
+      - Employees
+    responses:
+      200:
+        description: A list of employees
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/EmployeeResponse'
+    """
     connection = connect_to_db()
     cursor = connection.cursor()
     cursor.execute('SELECT employee_id, name, position FROM Employee')
@@ -45,6 +96,25 @@ def get_employees_list():
 
 @app.route('/employees/<int:employee_id>', methods=['GET'])
 def get_employee(employee_id):
+    """
+    Get details of a specific employee
+    ---
+    tags:
+      - Employees
+    parameters:
+      - name: employee_id
+        in: path
+        type: integer
+        required: true
+        description: Numeric ID of the employee to get
+    responses:
+      200:
+        description: Employee details
+        schema:
+          $ref: '#/definitions/EmployeeResponse'
+      404:
+        description: Employee not found
+    """
     connection = connect_to_db()
     cursor = connection.cursor()
     cursor.execute('SELECT employee_id, name, position FROM Employee WHERE employee_id = %s', (employee_id,))
@@ -60,6 +130,31 @@ def get_employee(employee_id):
 
 @app.route('/employees/<int:employee_id>', methods=['PUT'])
 def update_info(employee_id):
+    """
+    Update employee information
+    ---
+    tags:
+      - Employees
+    parameters:
+      - name: employee_id
+        in: path
+        type: integer
+        required: true
+        description: Numeric ID of the employee to update
+      - in: body
+        name: body
+        schema:
+          $ref: '#/definitions/Employee'
+    responses:
+      200:
+        description: Employee updated successfully
+        schema:
+          $ref: '#/definitions/EmployeeResponse'
+      404:
+        description: Employee not found
+      400:
+        description: Invalid input
+    """
     data = request.get_json()
     name = data.get('name')
     position = data.get('position')
@@ -80,6 +175,28 @@ def update_info(employee_id):
 
 @app.route('/employees/<int:employee_id>', methods=['DELETE'])
 def delete_employee(employee_id):
+    """
+    Delete an employee
+    ---
+    tags:
+      - Employees
+    parameters:
+      - name: employee_id
+        in: path
+        type: integer
+        required: true
+        description: Numeric ID of the employee to delete
+    responses:
+      200:
+        description: Employee deleted successfully
+        schema:
+          properties:
+            message:
+              type: string
+              description: Success message
+      404:
+        description: Employee not found
+    """
     connection = connect_to_db()
     cursor = connection.cursor()
     cursor.execute('DELETE FROM Employee WHERE employee_id = %s', (employee_id,))
@@ -89,8 +206,10 @@ def delete_employee(employee_id):
 
     return jsonify({'message': 'Employee deleted successfully'}), 200
 
+
 def web_request():
     return requests.get("http://127.0.0.1:5000/employees")
+
 
 if __name__ == '__main__':
     app.run(debug=True)
