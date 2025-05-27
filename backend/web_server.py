@@ -1,18 +1,40 @@
 import psycopg2
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from psycopg2.extras import RealDictCursor
 from werkzeug.utils import redirect
 from flasgger import Swagger
 
+
 app = Flask(__name__)
 swagger = Swagger(app)
-
+users = {'Admin': 'admin_password', 'User': 'user_password'}
 
 def connect_to_db():
     conn = psycopg2.connect(database='Employee_DataBase', user='administrator', password='root', host='localhost',
                             port='5432')
     return conn
+
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        if username in users and users[username] == password:
+            return f'Вы успешно вошли на сайт!'
+        else: return 'Неверное имя пользователя или пароль!', 401
+
+    return render_template('login.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 
 
 @app.route('/employees', methods=['POST'])

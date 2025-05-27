@@ -1,5 +1,5 @@
 import json
-from main import app, connect_to_db
+from web_server import app, connect_to_db
 from unittest import TestCase
 
 
