@@ -2,18 +2,155 @@ from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
     QVBoxLayout, QHBoxLayout, QWidget, QPushButton,
-    QLineEdit, QSizePolicy, QLabel, QMessageBox
+    QLineEdit, QSizePolicy, QLabel, QMessageBox, QStackedWidget
 )
 import sys
 import requests
+
+
+class AuthWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Авторизация")
+        self.setFixedSize(QSize(400, 300))
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.stacked_widget = QStackedWidget()
+
+        # Форма регистрации
+        register_tab = QWidget()
+        register_layout = QVBoxLayout()
+
+        self.reg_login = QLineEdit()
+        self.reg_login.setPlaceholderText("Логин")
+        register_layout.addWidget(self.reg_login)
+
+        self.reg_password = QLineEdit()
+        self.reg_password.setPlaceholderText("Пароль")
+        self.reg_password.setEchoMode(QLineEdit.EchoMode.Password)
+        register_layout.addWidget(self.reg_password)
+
+        self.btn_register = QPushButton("Зарегистрироваться")
+        self.btn_register.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-weight: bold;
+                padding: 8px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+        register_layout.addWidget(self.btn_register)
+
+        register_tab.setLayout(register_layout)
+
+        # Форма входа
+        login_tab = QWidget()
+        login_layout = QVBoxLayout()
+
+        self.login_username = QLineEdit()
+        self.login_username.setPlaceholderText("Логин")
+        login_layout.addWidget(self.login_username)
+
+        self.login_password = QLineEdit()
+        self.login_password.setPlaceholderText("Пароль")
+        self.login_password.setEchoMode(QLineEdit.EchoMode.Password)
+        login_layout.addWidget(self.login_password)
+
+        self.btn_login = QPushButton("Войти")
+        self.btn_login.setStyleSheet("""
+            QPushButton {
+                background-color: #2196F3;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-weight: bold;
+                padding: 8px;
+            }
+            QPushButton:hover {
+                background-color: #0b7dda;
+            }
+        """)
+        login_layout.addWidget(self.btn_login)
+
+        login_tab.setLayout(login_layout)
+
+        # Добавляем формы в stacked widget
+        self.stacked_widget.addWidget(register_tab)
+        self.stacked_widget.addWidget(login_tab)
+
+        # Переключатель между формами
+        self.switch_btn = QPushButton("Уже есть аккаунт? Войти")
+        self.switch_btn.setStyleSheet("""
+            QPushButton {
+                border: none;
+                color: #2196F3;
+                text-decoration: underline;
+                padding: 5px;
+            }
+        """)
+        self.switch_btn.clicked.connect(self.toggle_forms)
+
+        # Главный layout
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(QLabel("Добро пожаловать!", alignment=Qt.AlignmentFlag.AlignCenter))
+        main_layout.addWidget(self.stacked_widget)
+        main_layout.addWidget(self.switch_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.setLayout(main_layout)
+
+    def toggle_forms(self):
+        if self.stacked_widget.currentIndex() == 0:
+            self.stacked_widget.setCurrentIndex(1)
+            self.switch_btn.setText("Нет аккаунта? Зарегистрироваться")
+            self.setWindowTitle("Авторизация")
+        else:
+            self.stacked_widget.setCurrentIndex(0)
+            self.switch_btn.setText("Уже есть аккаунт? Войти")
+            self.setWindowTitle("Регистрация")
+
+    def closeEvent(self, event):
+        """Переопределяем метод закрытия окна"""
+        QApplication.quit()
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.selected_employee_id = None
+
+        # Сначала показываем окно авторизации
+        self.auth_window = AuthWindow()
+        self.auth_window.show()
+
+        # Подключаем кнопки авторизации
+        self.auth_window.btn_login.clicked.connect(self.try_login)
+        self.auth_window.btn_register.clicked.connect(self.try_register)
+
+        # Когда авторизация успешна, инициализируем основное окно
+        self.auth_window.btn_login.clicked.connect(self.initialize_main_window)
+
+    def try_login(self):
+        """Метод для попытки входа"""
+        # Здесь будет ваша логика проверки авторизации
+        print("Попытка входа...")
+
+    def try_register(self):
+        """Метод для попытки регистрации"""
+        # Здесь будет ваша логика регистрации
+        print("Попытка регистрации...")
+
+    def initialize_main_window(self):
+        """Инициализация основного окна после успешной авторизации"""
+        self.auth_window.close()
         self.setup_ui()
         self.get_all_employees()
+        self.show()
 
     def setup_ui(self):
         self.setWindowTitle("Управление сотрудниками")
@@ -317,8 +454,12 @@ if __name__ == "__main__":
             padding: 5px;
             font-size: 14px;
         }
+        QDialog {
+            background-color: #f5f5f5;
+        }
     """)
 
+    # Создаем и показываем главное окно (которое сначала покажет окно авторизации)
     window = MainWindow()
-    window.show()
+
     sys.exit(app.exec())

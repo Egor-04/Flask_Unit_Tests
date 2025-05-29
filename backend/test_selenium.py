@@ -17,7 +17,7 @@ class FlaskAppTests(TestCase):
         cls.app_context.push()
 
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')  # Для запуска без GUI
+        options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         cls.driver = webdriver.Chrome(options=options)
@@ -71,7 +71,7 @@ class FlaskAppTests(TestCase):
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_element_located((By.TAG_NAME, 'body'))
         )
-        self.assertIn("Вы успешно вошли на сайт!", self.driver.page_source)
+        self.assertIn("Вы успешно вошли на сайт, Admin!", self.driver.page_source)
 
     def test_navigation(self):
         self.driver.get(self.base_url)

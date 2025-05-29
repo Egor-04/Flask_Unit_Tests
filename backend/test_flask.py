@@ -1,5 +1,5 @@
 import json
-from web_server import app, connect_to_db
+from web_server import app, connect_to_db_as_admin
 from unittest import TestCase
 
 
@@ -8,7 +8,7 @@ class Test(TestCase):
         self.app = app.test_client()
         self.app.testing = True
 
-        self.connection = connect_to_db()
+        self.connection = connect_to_db_as_admin()
         self.cursor = self.connection.cursor()
         self.cursor.execute('''
         DROP TABLE IF EXISTS Employee;

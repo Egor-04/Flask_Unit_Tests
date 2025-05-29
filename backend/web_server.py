@@ -10,8 +10,13 @@ app = Flask(__name__)
 swagger = Swagger(app)
 users = {'Admin': 'admin_password', 'User': 'user_password'}
 
-def connect_to_db():
+def connect_to_db_as_admin():
     conn = psycopg2.connect(database='Employee_DataBase', user='administrator', password='root', host='localhost',
+                            port='5432')
+    return conn
+
+def connect_to_db_as_analyst():
+    conn = psycopg2.connect(database='Employee_DataBase', user='analyst', password='root', host='localhost',
                             port='5432')
     return conn
 
@@ -26,7 +31,7 @@ def login():
         password = request.form['password']
 
         if username in users and users[username] == password:
-            return f'Вы успешно вошли на сайт!'
+            return f'Вы успешно вошли на сайт, {username}!'
         else: return 'Неверное имя пользователя или пароль!', 401
 
     return render_template('login.html')
@@ -34,7 +39,6 @@ def login():
 @app.route('/about')
 def about():
     return render_template('about.html')
-
 
 
 @app.route('/employees', methods=['POST'])
@@ -79,7 +83,7 @@ def add_employee():
     name = data.get('name')
     position = data.get('position')
 
-    connection = connect_to_db()
+    connection = connect_to_db_as_admin()
     cursor = connection.cursor()
     cursor.execute('INSERT INTO Employee (name, position) VALUES (%s, %s) RETURNING employee_id', (name, position))
     employee_id = cursor.fetchone()[0]
@@ -105,7 +109,7 @@ def get_employees_list():
           items:
             $ref: '#/definitions/EmployeeResponse'
     """
-    connection = connect_to_db()
+    connection = connect_to_db_as_admin()
     cursor = connection.cursor()
     cursor.execute('SELECT employee_id, name, position FROM Employee')
     employees = cursor.fetchall()
@@ -137,7 +141,7 @@ def get_employee(employee_id):
       404:
         description: Employee not found
     """
-    connection = connect_to_db()
+    connection = connect_to_db_as_admin()
     cursor = connection.cursor()
     cursor.execute('SELECT employee_id, name, position FROM Employee WHERE employee_id = %s', (employee_id,))
     employee = cursor.fetchone()
@@ -181,7 +185,7 @@ def update_info(employee_id):
     name = data.get('name')
     position = data.get('position')
 
-    connection = connect_to_db()
+    connection = connect_to_db_as_admin()
     cursor = connection.cursor()
     cursor.execute('UPDATE Employee SET name = %s, position = %s WHERE employee_id = %s RETURNING employee_id, name, position', (name, position, employee_id))
     updated_employee = cursor.fetchone()
@@ -219,7 +223,7 @@ def delete_employee(employee_id):
       404:
         description: Employee not found
     """
-    connection = connect_to_db()
+    connection = connect_to_db_as_admin()
     cursor = connection.cursor()
     cursor.execute('DELETE FROM Employee WHERE employee_id = %s', (employee_id,))
     connection.commit()
